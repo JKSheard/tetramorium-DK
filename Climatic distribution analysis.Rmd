@@ -1,0 +1,195 @@
+---
+title: "Climatic variables"
+author: "Julie K. Sheard"
+date: "14 okt 2019"
+output: html_document
+---
+
+## Comparison of climatic variables
+
+This script compares density distributions of ten climatic variables  for two ant species (Tetramorium immigrans and Tetramorium caespitum).
+
+Climatic variables:
+Mean annual temperature
+Temperature seasonality
+Temperature of warmest quarter
+Temperature of coldest quarter
+Annual precipitation
+Precipitation seasonality
+Precipitation of wettest quarter
+Precipitation of driest quarter
+Precipitation of warmest quarter
+Precipitation of coldest quarter
+
+All climatic variables were downloaded from Worldclim 1.4 at 2.5 arc-minutes (  ??5 km) resolution (Hijmans et al., 2005). 
+
+
+```{r}
+#Set theme
+theme_set(theme_classic())
+
+#Required libraries
+library(plyr)
+library(ggplot2)
+library(gridExtra)
+
+#Load data
+setwd("H:/Documents/Projects/T immigrans/data")
+```
+
+
+```{r}
+#Calculate mean value of each climate variable for each species
+mu <- ddply(density, "Source", summarise, grp.mean=mean(Annual.Mean.Temperature))
+mu2 <- ddply(density, "Source", summarise, grp.mean=mean(Temperature.Seasonality))
+mu3 <- ddply(density, "Source", summarise, grp.mean=mean(Mean.Temperature.of.Warmest.Quarter))
+mu4 <- ddply(density, "Source", summarise, grp.mean=mean(Mean.Temperature.of.Coldest.Quarter))
+mu5 <- ddply(density, "Source", summarise, grp.mean=mean(Annual.Precipitation))
+mu6 <- ddply(density, "Source", summarise, grp.mean=mean(Precipitation.Seasonality..Coefficient.of.Variation.))
+mu7 <- ddply(density, "Source", summarise, grp.mean=mean(Precipitation.of.Wettest.Quarter))
+mu8 <- ddply(density, "Source", summarise, grp.mean=mean(Precipitation.of.Driest.Quarter))
+mu9 <- ddply(density, "Source", summarise, grp.mean=mean(Precipitation.of.Warmest.Quarter))
+mu10 <- ddply(density, "Source", summarise, grp.mean=mean(Precipitation.of.Coldest.Quarter))
+```
+
+###Plot density plots for each climatic variable
+Tetramorium immigrans is blue and Tertramoriumn caespitum is orange
+
+```{r}
+#Annual mean temperature
+one <- ggplot(density, aes(Annual.Mean.Temperature))
+onef <- one + geom_density(aes(color=factor(Source)), alpha=0.8) + 
+    labs(x= expression(paste(" Annual Mean Temperature [",degree,"C]")), fill="Species") +
+    geom_vline(data=mu, aes(xintercept=grp.mean, color=Source),
+           linetype="dashed")  + 
+    scale_color_manual(values=c("#fc8d59", "#7493c2")) +
+    theme(legend.position = "none")
+
+#Temperature seasonality
+two <- ggplot(density, aes(Temperature.Seasonality))
+twof <-two + geom_density(aes(color=factor(Source)), alpha=0.8) + 
+  labs(x= "Temperature Seasonality", fill="Species") +
+  geom_vline(data=mu2, aes(xintercept=grp.mean, color=Source),
+             linetype="dashed")  + 
+  scale_color_manual(values=c("#fc8d59", "#7493c2")) +
+  theme(legend.position = "none")
+
+#Temperature of warmest quarter
+three <- ggplot(density, aes(Mean.Temperature.of.Warmest.Quarter))
+threef <-three + geom_density(aes(color=factor(Source)), alpha=0.8) + 
+  labs(x= expression(paste("Mean Temperature of Warmest Quarter [",degree,"C]")), fill="Species") +
+  geom_vline(data=mu3, aes(xintercept=grp.mean, color=Source),
+             linetype="dashed")  + 
+  scale_color_manual(values=c("#fc8d59", "#7493c2")) +
+  theme(legend.position = "none")
+
+#Temperature of coldest quarter
+four <- ggplot(density, aes(Mean.Temperature.of.Coldest.Quarter))
+fourf <-four + geom_density(aes(color=factor(Source)), alpha=0.8) + 
+  labs(x= expression(paste("Mean Temperature of Coldest Quarter [",degree,"C]")), fill="Species") +
+  geom_vline(data=mu4, aes(xintercept=grp.mean, color=Source),
+             linetype="dashed")  + 
+  scale_color_manual(values=c("#fc8d59", "#7493c2")) +
+  theme(legend.position = "none")
+
+#Annual precipitation
+five <- ggplot(density, aes(Annual.Precipitation))
+fivef <-five + geom_density(aes(color=factor(Source)), alpha=0.8) + 
+  labs(x="Annual Precipitation [mm]", fill="Species") +
+  geom_vline(data=mu5, aes(xintercept=grp.mean, color=Source),
+             linetype="dashed")  + 
+  scale_color_manual(values=c("#fc8d59", "#7493c2")) +
+  theme(legend.position = "none")
+
+#Precipitation seasonality
+six <- ggplot(density, aes(Precipitation.Seasonality..Coefficient.of.Variation.))
+sixf <-six + geom_density(aes(color=factor(Source)), alpha=0.8) + 
+  labs(x="Precipitation Seasonality", fill="Species") +
+  geom_vline(data=mu6, aes(xintercept=grp.mean, color=Source),
+             linetype="dashed")  + 
+  scale_color_manual(values=c("#fc8d59", "#7493c2")) +
+  theme(legend.position = "none")
+
+#Precipitation of wettest quarter
+seven <- ggplot(density, aes(Precipitation.of.Wettest.Quarter))
+sevenf <-seven + geom_density(aes(color=factor(Source)), alpha=0.8) + 
+  labs(x="Precipitation of Wettest Quarter [mm]", fill="Species") +
+  geom_vline(data=mu7, aes(xintercept=grp.mean, color=Source),
+             linetype="dashed")  + 
+  scale_color_manual(values=c("#fc8d59", "#7493c2")) +
+  theme(legend.position = "none")
+
+#Precipitation of driest quarter
+eight <- ggplot(density, aes(Precipitation.of.Driest.Quarter))
+eightf <-eight + geom_density(aes(color=factor(Source)), alpha=0.8) + 
+  labs(x="Precipitation of Driest Quarter [mm]", fill="Species") +
+  geom_vline(data=mu8, aes(xintercept=grp.mean, color=Source),
+             linetype="dashed")  + 
+  scale_color_manual(values=c("#fc8d59", "#7493c2")) +
+  theme(legend.position = "none")
+
+#Precipitation of warmest quarter
+nine <- ggplot(density, aes(Precipitation.of.Warmest.Quarter))
+ninef <-nine + geom_density(aes(color=factor(Source)), alpha=0.8) + 
+  labs(x="Precipitation of Warmest Quarter [mm]", fill="Species") +
+  geom_vline(data=mu9, aes(xintercept=grp.mean, color=Source),
+             linetype="dashed")  + 
+  scale_color_manual(values=c("#fc8d59", "#7493c2")) +
+  theme(legend.position = "none")
+
+#Precipitation of coldest quarter
+ten <- ggplot(density, aes(Precipitation.of.Coldest.Quarter))
+tenf <-ten + geom_density(aes(color=factor(Source)), alpha=0.8) + 
+  labs(x="Precipitation of Coldest Quarter [mm]", fill="Species") +
+  geom_vline(data=mu10, aes(xintercept=grp.mean, color=Source),
+             linetype="dashed")  + 
+  scale_color_manual(values=c("#fc8d59", "#7493c2")) +
+  theme(legend.position = "none")
+
+#Arrange plots in grid
+grid.arrange(onef, twof, threef, fourf, fivef, sixf, sevenf, eightf, ninef, tenf, ncol=2)
+```
+
+#Compare means to see if species differ in their climatic distribution 
+
+```{r}
+#Annual mean temperature
+wilcox.test(Annual.Mean.Temperature ~ Source, data = density,
+                   exact = FALSE)
+
+#Temperature seasonality
+wilcox.test(Temperature.Seasonality ~ Source, data = density,
+            exact = FALSE)
+
+#Temperature of warmest quarter
+wilcox.test(Mean.Temperature.of.Warmest.Quarter ~ Source, data = density,
+            exact = FALSE)
+
+#Temperature of coldest quarter
+wilcox.test(Mean.Temperature.of.Coldest.Quarter ~ Source, data = density,
+            exact = FALSE)
+
+#Annual precipitation
+wilcox.test(Annual.Precipitation ~ Source, data = density,
+            exact = FALSE)
+
+#Precipitation seasonality
+wilcox.test(Precipitation.Seasonality..Coefficient.of.Variation. ~ Source, data = density,
+            exact = FALSE)
+
+#Precipitation of wettest quarter
+wilcox.test(Precipitation.of.Wettest.Quarter ~ Source, data = density,
+            exact = FALSE)
+
+#Precipitation of driest quarter
+wilcox.test(Precipitation.of.Driest.Quarter ~ Source, data = density,
+            exact = FALSE)
+
+#Precipitation of warmest quarter
+wilcox.test(Precipitation.of.Warmest.Quarter ~ Source, data = density,
+            exact = FALSE)
+
+#Precipitation of coldest quarter
+wilcox.test(Precipitation.of.Coldest.Quarter ~ Source, data = density,
+            exact = FALSE)
+```

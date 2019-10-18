@@ -1,0 +1,59 @@
+---
+title: "Habitat analysis"
+author: "Julie K. Sheard"
+date: "14 okt 2019"
+output: html_document
+---
+
+## Habitat analysis
+
+This script compares differences in the habitats that the ant species Tetramorium caespitum (Tetcae) and Tetramorium immigrans (Tetimi) are found in.
+
+Habitat variables were extracted for both species from CORINE 2012 in ArcGIS
+
+```{r}
+library(raster)
+library(rgdal)
+```
+
+```{r}
+setwd("H:/Documents/Projects/T immigrans/data") #Set directory back to species data folder
+
+hab_sum <- read.csv("habitat_summed.csv",h=T,sep=";")
+
+
+res <- wilcox.test(hab_sum$Tetcae, hab_sum$Tetimi, paired = TRUE)
+res
+
+#Load T. immigrans data
+Tetimi <- read.csv("//a00143.science.domain/lfj315/Documents/Projects/T immigrans/data/Tetimi_compare.csv", sep=";", header = TRUE)
+
+#Load T. caespitum data
+Tetcae <- read.csv("//a00143.science.domain/lfj315/Documents/Projects/T immigrans/data/Tetcae_compare.csv", sep=";", header = TRUE)
+
+#Load between-species comparison data
+Tet <- read.csv("//a00143.science.domain/lfj315/Documents/Projects/T immigrans/data/Tet_compare.csv", sep=";", header = TRUE)
+```
+
+#Model habitat use
+
+```{r}
+#Fit saturated models
+model_Tetimi <- glm(count~Land.use.100m*Data.type, data = Tetimi, family=poisson)
+model_Tetcae <- glm(count~Land.use.100m*Data.type, data = Tetcae, family=poisson)
+model_Tet <- glm(count~Land.use.100m*Data.type, data = Tet, family=poisson)
+
+#Fit model without interaction
+model2_Tetimi <- glm(count~Land.use.100m+Data.type, data = Tetimi, family=poisson)
+model2_Tetcae <- glm(count~Land.use.100m+Data.type, data = Tetcae, family=poisson)
+model2_Tet <- glm(count~Land.use.100m+Data.type, data = Tet, family=poisson)
+
+#Compare two models with ANOVA 
+
+aov_Tetimi <- anova(model_Tetimi,model2_Tetimi, test ="Chi")
+aov_Tetimi
+aov_Tetcae <- anova(model_Tetcae,model2_Tetcae, test ="Chi")
+aov_Tetcae
+aov_Tet <- anova(model_Tet,model2_Tet, test ="Chi")
+aov_Tet
+```
