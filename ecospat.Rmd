@@ -1,0 +1,180 @@
+---
+title: "Ecospat analysis"
+author: "Julie Sheard"
+date: "11/2/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Description
+
+This is the script used to run the niche analyses using the package ecospat
+
+### Load packages
+
+```{r}
+library(raster)
+library(ade4)
+library(ecospat)
+library(rgdal)
+```
+
+### Load species data 
+```{r}
+setwd("H:/Documents/Projects/T immigrans/data")
+
+spp <- read.csv("both_wbioclim_clean.csv",h=T,sep=";")
+head(spp)
+xy.sp1<-subset(spp,species=="sp1")[3:4] #Tetramorium_caespitum
+xy.sp2<-subset(spp,species=="sp2")[3:4] #Tetramorium_immigrans
+```
+
+### Load and format environmental data, 2.5 minutes
+
+Climatic variables were downloaded from Worldclim
+
+```{r}
+setwd("H:/Documents/Projects/T immigrans/data/bio2_2.5_asc")
+Bio01 <- raster("__Bio01.asc")
+Bio04 <- raster("__Bio04.asc")
+Bio12 <- raster("__Bio12.asc")
+Bio15 <- raster("__Bio15.asc")
+Bio18 <- raster("__Bio18.asc")
+
+env = stack(Bio01, Bio04, Bio12, Bio15, Bio18)
+names(env) <- c("bio01", "bio04", "bio12", "bio15", "bio18")
+```
+
+### Extract environment for the two species
+sp1 = Tetramorium caespitum
+sp2 = Tetramorium immigrans
+
+```{r}
+env.sp1<-subset(spp,species=="sp1")[6:10]
+env.sp2<-subset(spp,species=="sp2")[6:10]
+
+env.sp1<-raster::extract(env,xy.sp1)
+env.sp2<-raster::extract(env,xy.sp2)
+
+#Check that headers match between the three environments
+head(env.sp1)
+head(env.sp2)
+head(env)
+```
+
+```{r}
+#Exclude points with no data
+env.sp1.1 <- na.exclude(env.sp1)
+env.sp2.2 <- na.exclude(env.sp2)
+
+env.bkg<-na.exclude(values(env))
+```
+
+
+### Ready PCA-environment
+
+```{r}
+pca.cal <- dudi.pca(env.bkg, center = TRUE, scale = TRUE, scannf = FALSE, nf = 2)
+
+# predict the scores on the axes
+scores.bkg <- na.exclude(pca.cal$li)  #scores for background climate
+scores.sp1 <- na.exclude(suprow(pca.cal,env.sp1)$lisup) #scores for sp1
+scores.sp2 <- na.exclude(suprow(pca.cal,env.sp2)$lisup) #scores for sp2
+
+# calculation of occurence density (niche z)
+z1 <- ecospat.grid.clim.dyn(scores.bkg, scores.bkg, scores.sp1,R=100)
+z2 <- ecospat.grid.clim.dyn(scores.bkg, scores.bkg, scores.sp2,R=100)
+```
+
+### Carry out niche analysis
+
+```{r}
+#Calculate niche overlap metrics D and I
+ecospat.niche.overlap(z1,z2 ,cor=T)
+
+#Run niche similarity test
+sim.test <- ecospat.niche.similarity.test(z1, z2,
+                                          rep=1000, alternative = "greater",
+                                          rand.type=2)
+
+#Run niche equivalency test
+eq.test <- ecospat.niche.equivalency.test (z1, z2, rep=1000, alternative = "greater", ncores = 1)
+
+dev.off()
+par(cex=2.5)
+```
+
+### Visualise results
+
+```{r}
+#Plot equivalency test
+ecospat.plot.overlap.test(eq.test, "D", "Equivalency")
+#Plot similarity test
+ecospat.plot.overlap.test(sim.test, "D", "Similarity")
+```
+
+### Visualise climatic niche overlap in environmental space
+
+```{r}
+dev.off()
+
+par(cex=2)
+windows()
+ecospat.plot.niche.dyn(z1, z2, quant=0.25, interest=2,
+                       title= "", name.axis1="PC1",
+                       name.axis2="PC2", colZ1="black", colZ2="black",
+                       colz2="#7493c2", colz1="#fc8d59")
+
+ecospat.shift.centroids(scores.sp1, scores.sp2, scores.bkg, scores.bkg,col="black")
+```
+
+### Conduct PCA for both species combined
+
+```{r}
+names(env.sp1.1) <- c("Mean ann. temp.", "Temp. seasonality", "Ann. precip.", "Precip. seasonality", "Precip. warm. quart.")
+names(env.sp2.2) <- c("Mean ann. temp.", "Temp. seasonality", "Ann. precip.", "Precip. seasonality", "Precip. warm. quart.")
+pca.env <- dudi.pca(rbind(env.sp1.1,env.sp2.2)[,1:5],scannf=F,nf=2)
+dev.off()
+
+#Plot variable contributions to PC1 and PC2
+
+windows()
+ecospat.plot.contrib(contrib=pca.env$co, eigen=pca.env$eig)
+scores <- pca.env$li
+```
+
+### Plot species occurrence in geographic space
+
+```{r}
+windows()
+par(mfrow=c(1,2))
+
+#Tetramorium caespitum
+geoz1<-ecospat.niche.zProjGeo(z1,env)
+windows()
+plot(geoz1,main="Tetramorium caespitum")
+points(xy.sp1, pch=20, cex=0.2)
+
+writeRaster(geoz1, filename="TetCae_geo_09022020_new.asc")
+
+#Tetramorium immigrans
+geoz2<-ecospat.niche.zProjGeo(z2,env)
+plot(geoz2,main="Tetramorium immigrans")
+points(xy.sp2, pch=20, cex=0.2)
+
+writeRaster(geoz2, filename="TetImi_geo_09022020_new.asc")
+
+#Clamp map to only show areas with at least 60 % suitability
+
+Tetcae_clamp<- clamp(geoz1,lower=0.6, useValue=TRUE)
+Tetimi_clamp<- clamp(geoz2,lower=0.6, useValue=TRUE)
+windows()
+plot(Tetcae_clamp)
+points(xy.sp1, pch=20, cex=1)
+windows()
+plot(Tetimi_clamp)
+points(xy.sp2, pch=20, cex=1)
+```
